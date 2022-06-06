@@ -1,0 +1,22 @@
+<html>
+<head>
+    <meta charset="utf-8">
+	<style> body { margin: 0; } </style>
+     <script src="../node_modules/force-graph/dist/force-graph.js"></script>
+</head>
+<body>
+	<div id="graph"></div>
+	<script>
+    data = {{graph_data}};
+	const Graph = ForceGraph()
+	(document.getElementById('graph'))
+	.graphData(data)
+	.nodeId('id')
+	.nodeVal('val')
+	.nodeLabel('name')
+	.nodeAutoColorBy('group')
+	.linkSource('source')
+	.linkTarget('target');
+	</script>
+</body>
+</html>
