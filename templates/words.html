@@ -2,7 +2,7 @@
 <head>
     <meta charset="utf-8">
 	<style> body { margin: 0; } </style>
-     <script src="../node_modules/force-graph/dist/force-graph.js"></script>
+     <script src="{{ base_path }}node_modules/force-graph/dist/force-graph.js"></script>
 </head>
 <body>
 	<div id="graph"></div>
@@ -38,7 +38,9 @@
           ctx.fillStyle = color;
           const bckgDimensions = node.__bckgDimensions;
           bckgDimensions && ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
-        });
+        }).onNodeClick(node => {
+          window.location.href = node.id + ".html"
+	});
 	</script>
 </body>
 </html>

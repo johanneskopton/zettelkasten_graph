@@ -20,7 +20,10 @@ nth_link_limit = 100
 exclude_list = ["person", "beispielzettel"]
 
 # template for display ("nodes" or "words")
-template = "nodes"
+template = "words"
+
+# depth of subgraphs
+depth = 2
 
 
 def create_graph(
@@ -71,17 +74,71 @@ def create_graph(
                 "source": zettel_id,
                 "target": link_id
             })
-    return json.dumps(result_dict, indent=True)
+    return result_dict
 
 
-def hydrate_js(graph, template="nodes"):
+def hydrate_js(graph, target, template="words", base_path="../"):
+    json_graph = json.dumps(graph, indent=True)
     env = jinja2.Environment(loader=jinja2.FileSystemLoader("templates"))
     template = env.get_template("{}.html".format(template))
-    dist_path = "dist/index.html"
+    dist_path = target
     with open(dist_path, "w") as dist_file:
-        dist_file.write(template.render(graph_data=graph))
+        dist_file.write(
+            template.render(
+                graph_data=json_graph,
+                base_path=base_path,
+            ))
+
+
+def get_local_subgraph(graph, node_id, max_depth):
+    """ Return protion of the graph, that is connected to node_id with maximum
+    *depth* links.
+    """
+
+    def get_connected_nodes(node_id, recursion_depth=0):
+        if recursion_depth >= max_depth:
+            return set()
+        connected_node_ids = {node_id}
+        for link in graph["links"]:
+            if link["target"] == node_id:
+                connected_node_ids.add(link["source"])
+            elif link["source"] == node_id:
+                connected_node_ids.add(link["target"])
+        next_connected_node_ids = set()
+        for connected_node_id in connected_node_ids:
+            next_connected_node_ids = next_connected_node_ids.union(
+                get_connected_nodes(connected_node_id, recursion_depth + 1))
+        return connected_node_ids.union(next_connected_node_ids)
+
+    subgraph = {
+        "nodes": [],
+        "links": [],
+    }
+
+    subgraph_nodes = get_connected_nodes(node_id)
+
+    for node in graph["nodes"]:
+        if node["id"] in subgraph_nodes:
+            subgraph["nodes"].append(node)
+
+    for link in graph["links"]:
+        if link["source"] in subgraph_nodes and link[
+                "target"] in subgraph_nodes:
+            subgraph["links"].append(link)
+
+    return subgraph
+
+
+def hydrate_subgraphs(graph, depth, template="words"):
+    for node in graph["nodes"]:
+        node_id = node["id"]
+        subgraph = get_local_subgraph(graph, node_id, depth)
+        hydrate_js(subgraph, "dist/local_graphs/{}.html".format(node_id),
+                   template, "../../")
 
 
 graph = create_graph(zettelkasten_path, filename_regex, id_regex,
                      nth_link_limit, exclude_list)
-hydrate_js(graph, template)
+hydrate_js(graph, "dist/index.html", template, "../")
+
+hydrate_subgraphs(graph, depth, template)
