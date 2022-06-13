@@ -97,33 +97,44 @@ def get_local_subgraph(graph, node_id, max_depth):
 
     def get_connected_nodes(node_id, recursion_depth=0):
         if recursion_depth >= max_depth:
-            return set()
-        connected_node_ids = {node_id}
+            return [set()]
+        connected_node_ids = [set()]
         for link in graph["links"]:
             if link["target"] == node_id:
-                connected_node_ids.add(link["source"])
+                connected_node_ids[0].add(link["source"])
             elif link["source"] == node_id:
-                connected_node_ids.add(link["target"])
+                connected_node_ids[0].add(link["target"])
         next_connected_node_ids = set()
-        for connected_node_id in connected_node_ids:
+        for connected_node_id in connected_node_ids[0]:
             next_connected_node_ids = next_connected_node_ids.union(
-                get_connected_nodes(connected_node_id, recursion_depth + 1))
-        return connected_node_ids.union(next_connected_node_ids)
+                get_connected_nodes(connected_node_id, recursion_depth + 1)[0])
+        connected_node_ids.append(next_connected_node_ids)
+        return connected_node_ids
 
     subgraph = {
         "nodes": [],
         "links": [],
     }
 
-    subgraph_nodes = get_connected_nodes(node_id)
+    subgraph_nodes = [{node_id}] + get_connected_nodes(node_id)
+    subgraph_nodes_total = set()
+    for level, subgraph_nodes_level in enumerate(subgraph_nodes):
+        subgraph_nodes[level] = subgraph_nodes[level] - subgraph_nodes_total
+        subgraph_nodes_total = subgraph_nodes_total.union(subgraph_nodes_level)
 
     for node in graph["nodes"]:
-        if node["id"] in subgraph_nodes:
-            subgraph["nodes"].append(node)
+        for level, level_subgraph_nodes in enumerate(subgraph_nodes):
+            if node["id"] in level_subgraph_nodes:
+                if level:
+                    node["val"] = 3
+                else:
+                    node["val"] = 6
+                node["group"] = level
+                subgraph["nodes"].append(node)
 
     for link in graph["links"]:
-        if link["source"] in subgraph_nodes and link[
-                "target"] in subgraph_nodes:
+        if link["source"] in subgraph_nodes_total and link[
+                "target"] in subgraph_nodes_total:
             subgraph["links"].append(link)
 
     return subgraph
