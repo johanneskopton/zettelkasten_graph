@@ -27,7 +27,7 @@ npm install
 - each Zettel has its ID in its filename (among other text, if you like) like this `<zettel_ID>_blabla.md`
 - Zettel are linked using wikilinks like this `[[<target_ID>]]`
 - each Zettel has at least one `H1` heading, the first of which is the Zettel title
-- the fist hashtag `#blabla` is the Zettel's category (optional for color)
+- the first hashtag `#blabla` is the Zettel's category (optional for color)
 
 ## Usage
 
